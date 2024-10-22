@@ -1,0 +1,147 @@
+
+services:
+  db:
+    container_name: db
+    image: postgres:16-bullseye
+    restart: always
+    env_file: .env 
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - simbir_health_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  account_service:
+    build: ./account_service
+    container_name: account_service
+    ports:
+      - "8001:8000"
+    env_file: .env  
+    depends_on:
+      - db  
+    networks:
+      - simbir_health_network
+    volumes:
+      - ./account_service/:/app/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/ || exit 1"]  
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  hospital_service:
+    build: ./hospital_service
+    container_name: hospital_service
+    ports:
+      - "8002:8000"
+    env_file: .env  
+    depends_on:
+      - db
+      - account_service
+    networks:
+      - simbir_health_network
+    volumes:
+      - ./hospital_service/:/app/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8002/ || exit 1"]  
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  timetable_service:
+    build: ./timetable_service
+    container_name: timetable_service
+    ports:
+      - "8003:8000"
+    env_file: .env  
+    depends_on:
+      - db
+      - account_service
+      - hospital_service
+    networks:
+      - simbir_health_network
+    volumes:
+      - ./timetable_service/:/app/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8003/ || exit 1"]  
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  document_service:
+    build: ./document_service
+    container_name: document_service
+    ports:
+      - "8004:8000"
+    env_file: .env  
+    depends_on:
+      - db
+      - account_service       
+      - hospital_service
+      - timetable_service
+      - elasticsearch
+    networks:
+      - simbir_health_network
+    volumes:
+      - ./document_service/:/app/
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8004/ || exit 1"]  
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g 
+      - xpack.security.enabled=false 
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    networks:
+      - simbir_health_network
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.2
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - simbir_health_network
+
+volumes:
+  pgdata: {}
+  esdata: 
+    driver: local
+
+networks:
+  simbir_health_network:
+    driver: bridge

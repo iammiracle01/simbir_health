@@ -1,0 +1,39 @@
+{
+    "get_history_by_account_id": {
+      "summary": "Получение истории посещений и назначений аккаунта",
+      "description": "Возвращает записи где {patient_id}={id}",
+      "restrictions": "Только врачи и аккаунт, которому принадлежит история"
+    },
+    "get_history_by_id": {
+      "summary": "Получение подробной информации о посещении и назначениях",
+      "description": "Возвращает подробные данные о посещении по указанному {id}",
+      "restrictions": "Только врачи и аккаунт, которому принадлежит история"
+    },
+    "create_history": {
+      "summary": "Создание истории посещения и назначения",
+      "description": "Создает новую запись истории посещения и назначения.",
+      "body": {
+        "date": "dateTime(ISO8601)",
+        "patient_id": "int",
+        "hospital_id": "int",
+        "doctor_id": "int",
+        "room": "string",
+        "data": "string"
+      },
+      "restrictions": "Только администраторы, менеджеры и врачи. {patient_id} с ролью User."
+    },
+    "update_history": {
+      "summary": "Обновление истории посещения и назначения",
+      "description": "Обновляет существующую запись истории посещения по {id}.",
+      "body": {
+        "date": "dateTime(ISO8601)",
+        "patient_id": "int",
+        "hospital_id": "int",
+        "doctor_id": "int",
+        "room": "string",
+        "data": "string"
+      },
+      "restrictions": "Только администраторы, менеджеры и врачи. {patient_id} с ролью User."
+    }
+  }
+  
