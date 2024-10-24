@@ -64,7 +64,7 @@ def read_root():
 )
 async def search_documents(query: str, es: AsyncElasticsearch = Depends(lambda: app.state.es)):
     try:
-        response = await es.search(index="documents", body={"query": {"match": {"content": query}}})
+        response = await es.search(index="histories", body={"query": {"match": {"content": query}}})
         return {"результаты": response["hits"]["hits"]}
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=f"Документ не найден: {str(e)}")
@@ -79,7 +79,7 @@ async def search_documents(query: str, es: AsyncElasticsearch = Depends(lambda: 
 )
 async def index_document(doc: dict, es: AsyncElasticsearch = Depends(lambda: app.state.es)):
     try:
-        response = await es.index(index="documents", document=doc)
+        response = await es.index(index="histories", document=doc)
         return {"результат": "Документ добавлен в индекс", "id": response["_id"]}
     except ConnectionError as e:
         raise HTTPException(status_code=500, detail=f"Ошибка подключения к Elasticsearch: {str(e)}")
