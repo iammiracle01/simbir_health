@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from app.schemas.history import HistoryCreate, HistoryUpdate, HistoryResponse
 from app.services.history import (
@@ -47,11 +47,12 @@ async def get_history_by_id(
              description=api_docs["create_history"]["description"])
 @router.post("/History/", include_in_schema=False, response_model=HistoryResponse, status_code=200)
 async def create_history(
+    request: Request,
     history: HistoryCreate,  
     db: Session = Depends(get_db),
-    user: dict = Depends(verify_user_token), 
+    user: dict = Depends(verify_user_token)
 ):
-    return await create_history_service(history, user, db)
+    return await create_history_service(history, user, db, request)
 
 # Обновление истории посещения и назначения
 @router.put("/History/{id}", response_model=HistoryResponse, status_code=200,
@@ -59,9 +60,10 @@ async def create_history(
             description=api_docs["update_history"]["description"])
 @router.put("/History/{id}/", include_in_schema=False, response_model=HistoryResponse, status_code=200)
 async def update_history(
+    request: Request,
     id: int,
     history: HistoryUpdate,
     db: Session = Depends(get_db),
     user: dict = Depends(verify_user_token)
 ):
-    return await update_history_service(id, user, history, db)
+    return await update_history_service(id, user, history, db, request)
